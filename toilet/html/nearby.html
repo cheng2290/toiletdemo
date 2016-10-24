@@ -23,50 +23,94 @@
 		.amap-logo{margin-left: 50px;margin-bottom: 17px}
 		.amap-copyright{display: none !important;}
 		.amap-scalecontrol{margin-left: 52px;margin-bottom: 20px;}
-	</style>
-</head>
+		.locationIcon>img{width:32px;margin-left:2px;margin-top:2px;}
+      .makerStyle{background-color:#FF4814;font-size:12px;color:#fff;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border-radius: 2px;
+        width:50px;
+        height:30px;
+        line-height:30px;
+        text-align: center;
+      }
+      .infoWindow{
+        width:280px;
+        height:130px;
+        font-size:13px;
+        background-color:#fff;
+        box-shadow: 2px 2px 2px #888;
+        padding-bottom: 20px;
+      }
+      .info_arrow{
+        height:20px;
+        width:20px;
+        transform:rotate(-45deg);
+        -ms-transform:rotate(-45deg);
+        -moz-transform:rotate(45deg);
+        -webkit-transform:rotate(45deg);
+        -o-transform:rotate(45deg);
+        padding-left: 0 !important;
+        position: absolute;
+        left:125px;
+        top:132px;
+        background-color:#ffffff;
+        z-index: 4;
+      }
+      .info_title{
+        background-color:#0090FF;
+        height:28px;line-height:28px;color:#fff;padding-left:10px;
+      }
+      .infoWindow>div{padding-left:10px;margin-bottom:5px;}
+      .info_name{margin-top:10px;}
+      .info_address{color: #434754;}
+      .info_type{color: #434754;}
+      .info_dis{}
+      .dis_span{color: #FA2D00;font-weight: bold;}
+      .info_close{position: absolute;width:28px;height:26px;right:0;top:0;}
+      .info_close>img{margin-top:3px;right:3px;width:20px;}
+      .loc_circle{width:50px;height:50px;border:2px solid #49B3F4;
+        border-radius:50px;background-color:#64C7FA;opacity:0.5;}
+      .loc_img{position: relative;left:20px;top:-34px;}
+    </style>
+    <script src="http://webapi.amap.com/maps?v=1.3&key=b9c503c21f0b0dfdee1adaf5fb6bb363"></script>
+  </head>
 <body>
 	<div id="container"></div>  
 	<script type="text/javascript">
+	 	var isiPhone = navigator.userAgent.toLocaleLowerCase().match(/iPhone/i);
 	 	var mapObj = new AMap.Map('container',{
+	 		resizeEnable: true,
 	        zoom: 15
 	    });
+	    var warking = null;
+	 
 	     //加载工具条
 		mapObj.plugin(["AMap.ToolBar"],function(){
-        var tool = new AMap.ToolBar();
-    	mapObj.addControl(tool);  
+	        var tool = new AMap.ToolBar();
+	    	mapObj.addControl(tool);  
+   		});
 
     	//比例尺插件。位于地图右下角，用户可控制其显示与隐藏。
 		mapObj.plugin(["AMap.Scale"],function(){
 		    var scale = new AMap.Scale();
 		    mapObj.addControl(scale);  
 		});
-		var onComplete = function(res){
-			console.log(res);
+		var onLocationComplete = function(res){
+			mapObj.clearMap();
 			if (res.info === 'SUCCESS' && res.type === 'complete') {
 				var pos = res.position;
-				console.log(pos);
-				// AMap.PlaceSearch
-				AMap.service(["AMap.PlaceSearch"], function() {
-			        var placeSearch = new AMap.PlaceSearch({ //构造地点查询类
-			            pageSize: 5,
-			            pageIndex: 1,
-			            city: "021", //城市区号
-			            map: mapObj,
-			            panel: "panel"
-			        });
-			        //关键字查询
-			        placeSearch.search('酒店');
-			        AMap.event.addListener(placeSearch,'complete',function(data){
-			        	console.log('--SUCCESS---');
-			        	console.log(data);
-			        });
-			    });
+				doSearch(pos);
 			}else{
 				alert('调用地图服务异常或者没有数据！');
 			}
 		}
-		var onError = function(){
+		//初始化Walking服务
+		AMap.service('AMap.Walking', function(){
+     		 walking= new AMap.Walking({
+        		map: mapObj
+     		 });
+    	});
+		var onLocationError = function(){
 			alert('定位失败！请在手机上开启定位复位：设置->隐私->定位服务->厕所在哪儿->使用期间打开');
 		}
     	//定位空间 
@@ -87,11 +131,94 @@
 		    	buttonDom:locationIcon	//设置定位按钮样式
 		    });
 		    mapObj.addControl(geolocation);
-		    AMap.event.addListener(geolocation, 'complete', onComplete);//返回定位信息
-		    AMap.event.addListener(geolocation, 'error', onError);      //返回定位出错信息
+		    geolocation.getCurrentPosition();
+		    AMap.event.addListener(geolocation, 'complete', onLocationComplete);//返回定位信息
+		    AMap.event.addListener(geolocation, 'error', onLocationError);      //返回定位出错信息
 		});
-		
-	});
+
+		function _closeInfoWindow(){
+			mapObj.clearInfoWindow();
+		}
+		//根据中心位置搜索附近的厕所
+		//TODO: 
+		//1，点击marker，展示相信信息的infoWindow
+		//2，点击marker,进行路线规划和导航
+		function doSearch(pos){
+	      //展示定位
+	      var marker = new AMap.Marker({
+	        position: pos,
+	        map: mapObj,
+	        content:'<div class="loc_circle"></div><img class="loc_img" src="loc.png" style="width:16px;"/>'
+	      });
+	      AMap.service(["AMap.PlaceSearch"], function() {
+	        var placeSearch = new AMap.PlaceSearch({
+	          pageSize: 10,
+	          pageIndex: 1,
+	          extensions: 'base',
+	          type: '200300|200301|200302|200303'
+	        });
+	        placeSearch.searchNearBy("卫生间", pos, 2000, function(status, result) {
+	          if (status === 'complete' && result.info === 'OK') {
+	            var pois = result.poiList.pois;
+	            pois.forEach(function(poi){
+	              var divStr = '<div class="makerStyle">' + poi.distance + '米</div>';
+	              var info = '<div class="infoWindow"><div class="info_title">卫生间</div>'
+	                + '<div class="info_name">名称: ' + poi.name+ '</div>'
+	                + '<div class="info_dis">距您: ' + '<span class="dis_span">' + poi.distance + '米</span>' + '</div>'
+	                + '<div class="info_address">地址: ' + poi.address+ '</div>'
+	                + '<div class="info_type">类型: ' + (poi.type || '卫生间')+ '</div>'
+	                + '<div class="info_arrow"></div>';
+	              if(isiPhone && isiPhone.length){
+	                info +='<div class="info_close" ontouchstart="_closeInfoWindow()"><img src="close_blue.png" style=""/></div>'
+	                  + '</div>';
+	              }else{
+	                info += '<div class="info_close" onclick="_closeInfoWindow()"><img src="close_blue.png" style=""/></div>'
+	                + '</div>';
+	              }
+	              var marker = new AMap.Marker({
+	                position: poi.location,
+	                title: poi['name'],
+	                map: mapObj,
+	                content: divStr,
+	                offset: new AMap.Pixel(10,-25)
+	              });
+
+	              function showInfo(){
+	                var infowindow = new AMap.InfoWindow({
+	                  content: info,
+	                  offset: new AMap.Pixel(40,-35),
+	                  isCustom: true
+	                });
+	                infowindow.open(mapObj, poi.location);
+	                //步行路径规划
+	                walking.clear();
+	                var start = pos;
+	                var end = poi.location;
+	                walking.search(start, end, function(status, result){}, function(status, result){});
+	              }
+
+	              if(isiPhone && isiPhone.length){
+	                AMap.event.addListener(marker, 'touchstart', showInfo);
+	              }else{
+	                AMap.event.addListener(marker, 'click', showInfo);
+	              }
+
+	            });
+	            mapObj.setZoom(16);
+	          }else{
+	            alert('该地点没有查询到相关数据');
+	          }
+	        });
+	      });
+	    }
+		 
+		//取消高德地图图标点击跳转 
+		document.querySelector('a.amap-logo').onclick = function(){
+			return false;
+		};
+	 	//本地开发测试代码
+	    //doSearch([121.390686, 31.213976]);
+	    //map.setCenter([121.390686, 31.213976]);
 	</script>
 	
 </body>
