@@ -15,7 +15,6 @@ export default  class WeatherPage extends Component {
                     source={{uri: 'https://www.baidu.com'}}
                     style={styles.webview}
                 />
-				<Text style = {styles.text}>weatherPage</Text>
 
 			</View>
 		);
