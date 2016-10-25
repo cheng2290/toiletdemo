@@ -8,10 +8,12 @@ import {
 } from 'react-native';
 
 import TWebView from './tWebView';
+
+const nearByURL = './../html/nearby.html';
 class ToiletPage extends Component {
 	render(){
 		return(
-			<TWebView url='file:///Users/zhuxiaocheng/php/ReactNative/toilet/toilet/html/nearby.html' />
+			<TWebView url='{nearByURL}' />
 		);
 	}
 }
