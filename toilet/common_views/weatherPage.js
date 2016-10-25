@@ -3,15 +3,14 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
-  View,
-  TabBarIOS
+  View
 } from 'react-native';
 
-export default  class ReadPage extends Component {
+export default  class WeatherPage extends Component {
 	render(){
 		return(
 			<View style={styles.view}>
-				<Text style = {styles.text}>readPage</Text>
+				<Text style = {styles.text}>weatherPage</Text>
 			</View>
 		);
 	}
@@ -28,4 +27,3 @@ var styles = StyleSheet.create({
 		fontSize:60
 	}
 });
-AppRegistry.registerComponent('readPage',()=>readPage);

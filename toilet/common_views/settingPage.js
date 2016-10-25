@@ -3,8 +3,7 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
-  View,
-  TabBarIOS
+  View
 } from 'react-native';
 
 export default class SettingPage extends Component {

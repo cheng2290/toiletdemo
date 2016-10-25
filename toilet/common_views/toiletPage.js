@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Text,
   View,
-  TabBarIOS,
   WebView
 } from 'react-native';
 
